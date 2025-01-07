@@ -1,9 +1,9 @@
 const db = require('../config/database');
 
 const Project = {
-    async create({ name }) {
+    async create({ description, name }) {
         const sql = `INSERT INTO Projects (Name) VALUES (?)`;
-        const [result] = await db.execute(sql, [name]);
+        const [result] = await db.execute(sql, [description, name]);
         return result.insertId;
     },
 

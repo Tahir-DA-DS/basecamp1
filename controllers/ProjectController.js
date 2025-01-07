@@ -3,9 +3,9 @@ const Project = require('../models/Project');
 const ProjectController = {
   // Create a new project
   async create(req, res) {
-    const { name } = req.body;
+    const { description, name } = req.body;
     try {
-      const projectId = await Project.create({ name });
+      const projectId = await Project.create({ description, name });
       res.status(201).send(`Project created with ID: ${projectId}`);
     } catch (error) {
       res.status(500).send('Error creating project');
@@ -27,9 +27,9 @@ const ProjectController = {
   // Edit a project
   async edit(req, res) {
     const { id } = req.params;
-    const { name } = req.body;
+    const { description, name } = req.body;
     try {
-      await Project.update(id, { name });
+      await Project.update(id, { description, name });
       res.status(200).send('Project updated successfully');
     } catch (error) {
       res.status(500).send('Error updating project');

@@ -10,10 +10,10 @@ async function fetchUsers() {
       users.forEach(user => {
         const row = `
           <tr>
-            <td>${user.id}</td>
-            <td>${user.email}</td>
-            <td>${user.firstname}</td>
-            <td>${user.lastname}</td>
+            <td>${user.Id}</td>
+            <td>${user.Email}</td>
+            <td>${user.Firstname}</td>
+            <td>${user.Lastname}</td>
             <td>
               <button class="btn btn-warning btn-sm" onclick="editUser(${user.id})">Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">Delete</button>
