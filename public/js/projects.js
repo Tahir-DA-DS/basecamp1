@@ -1,7 +1,7 @@
 // Fetch and display all projects
 async function fetchProjects() {
     try {
-      const response = await fetch('/api/projects'); // GET /api/projects
+      const response = await fetch('http://localhost:3000/projects'); // GET /api/projects
       const projects = await response.json();
   
       const tableBody = document.getElementById('project-table-body');
@@ -21,7 +21,7 @@ async function fetchProjects() {
         tableBody.innerHTML += row;
       });
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      console.error('Error fetching projects:', error)
     }
   }
   
@@ -35,5 +35,37 @@ async function fetchProjects() {
     }
   }
   
-  // Initialize
-  fetchProjects();
+  // Add a new project
+async function addProject(event) {
+  event.preventDefault(); // Prevent form submission from refreshing the page
+
+  // Get project details from the form
+  const name = document.getElementById('project-name').value;
+  const description = document.getElementById('project-description').value;
+
+  try {
+    const response = await fetch('/api/projects', {
+      method: 'POST', // POST /api/projects
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, description }),
+    });
+
+    if (response.ok) {
+      fetchProjects(); // Refresh the table to show the new project
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
+      modal.hide(); // Close the modal
+      document.getElementById('add-project-form').reset(); // Reset the form
+    } else {
+      console.error('Failed to add project:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error adding project:', error);
+  }
+}
+
+// Initialize
+document.getElementById('add-project-form').addEventListener('submit', addProject); // Handle form submission
+
+fetchProjects();

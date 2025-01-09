@@ -25,7 +25,7 @@
   </nav>
   <div class="container mt-5">
     <h1>Projects</h1>
-    <button class="btn btn-primary mb-3" id="add-project-btn">Add Project</button>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addProjectModal">Add Project</button>
     <table class="table table-striped">
       <thead>
         <tr>
@@ -40,7 +40,30 @@
       </tbody>
     </table>
   </div>
-
+   <!-- Add Project Modal -->
+   <div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addProjectModalLabel">Add New Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="add-project-form">
+            <div class="mb-3">
+              <label for="project-name" class="form-label">Project Name</label>
+              <input type="text" class="form-control" id="project-name" required>
+            </div>
+            <div class="mb-3">
+              <label for="project-description" class="form-label">Project Description</label>
+              <textarea class="form-control" id="project-description" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Project</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- Bootstrap JS Bundle with Popper -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/projects.js"></script>

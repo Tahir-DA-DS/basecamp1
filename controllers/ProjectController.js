@@ -4,14 +4,26 @@ const ProjectController = {
   // Create a new project
   async create(req, res) {
     const { description, name } = req.body;
+    
+    
     try {
       const projectId = await Project.create({ description, name });
+  
       res.status(201).send(`Project created with ID: ${projectId}`);
     } catch (error) {
       res.status(500).send('Error creating project');
     }
   },
-
+// show all projects
+  async showAll (req, res) {
+    try {
+      const projects = await Project.getAllproject();
+      res.status(200).json(projects);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching  projects' });
+    }
+  },
   // Show a specific project
   async show(req, res) {
     const { id } = req.params;
