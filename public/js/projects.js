@@ -10,8 +10,10 @@ async function fetchProjects() {
       projects.forEach(project => {
         const row = `
           <tr>
-            <td>${project.id}</td>
-            <td>${project.name}</td>
+            <td>${project.Id}</td>
+            <td>${project.Name}</td>
+            <td>${project.description}</td>
+
             <td>
               <button class="btn btn-warning btn-sm" onclick="editProject(${project.id})">Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
@@ -44,7 +46,7 @@ async function addProject(event) {
   const description = document.getElementById('project-description').value;
 
   try {
-    const response = await fetch('/api/projects', {
+    const response = await fetch('http://localhost:3000/projects', {
       method: 'POST', // POST /api/projects
       headers: {
         'Content-Type': 'application/json',

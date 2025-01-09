@@ -17,7 +17,7 @@ const ProjectController = {
 // show all projects
   async showAll (req, res) {
     try {
-      const projects = await Project.getAllproject();
+      const projects = await Project.getAll();
       res.status(200).json(projects);
     } catch (error) {
       console.error(error);
