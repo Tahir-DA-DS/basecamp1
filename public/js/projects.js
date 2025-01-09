@@ -15,8 +15,8 @@ async function fetchProjects() {
             <td>${project.description}</td>
 
             <td>
-              <button class="btn btn-warning btn-sm" onclick="editProject(${project.id})">Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
+              <button class="btn btn-warning btn-sm" onclick="editProject(${project.Id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.Id})">Delete</button>
             </td>
           </tr>
         `;
@@ -30,7 +30,7 @@ async function fetchProjects() {
   // Delete a project
   async function deleteProject(projectId) {
     try {
-      await fetch(`/api/projects/${projectId}`, { method: 'DELETE' }); // DELETE /api/projects/:id
+      await fetch(`http://localhost:3000/projects/${projectId}`, { method: 'DELETE' }); // DELETE /api/projects/:id
       fetchProjects(); // Refresh the table
     } catch (error) {
       console.error('Error deleting project:', error);
