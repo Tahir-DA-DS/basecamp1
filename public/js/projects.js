@@ -67,6 +67,72 @@ async function addProject(event) {
   }
 }
 
+async function editProject(projectId) {
+  try {
+    // Fetch the current project details
+    const response = await fetch(`http://localhost:3000/projects/${projectId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch project details: ${response.statusText}`);
+    }
+
+    const project = await response.json();
+
+    // Pre-fill the modal form with the current project details
+    document.getElementById('edit-project-id').value = project.Id; // Hidden input for ID
+    document.getElementById('edit-project-name').value = project.Name;
+    document.getElementById('edit-project-description').value = project.description;
+
+    // Show the modal
+    const editProjectModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
+    editProjectModal.show();
+  } catch (error) {
+    console.error('Error fetching project details:', error);
+    alert('Failed to load project details. Please try again.');
+  }
+}
+async function saveProjectChanges() {
+  try {
+    const projectId = document.getElementById('edit-project-id').value;
+    const projectName = document.getElementById('edit-project-name').value.trim();
+    const projectDescription = document.getElementById('edit-project-description').value.trim();
+
+    // Validate input
+    if (!projectName || !projectDescription) {
+      alert('Both project name and description are required.');
+      return;
+    }
+
+    // Confirm before saving changes
+    if (!confirm('Are you sure you want to save these changes?')) {
+      return;
+    }
+
+    // Send a PUT request to update the project
+    const response = await fetch(`http://localhost:3000/projects/${projectId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: projectName,
+        description: projectDescription,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update project: ${response.statusText}`);
+    }
+
+    // Close the modal and refresh the project list
+    const editProjectModal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
+    editProjectModal.hide();
+    fetchProjects(); // Reload the project list
+  } catch (error) {
+    console.error('Error updating project:', error);
+    alert('Failed to update the project. Please try again.');
+  }
+}
+
 // Initialize
 document.getElementById('add-project-form').addEventListener('submit', addProject); // Handle form submission
 
