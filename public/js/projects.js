@@ -2,6 +2,7 @@
 async function fetchProjects() {
     try {
       const response = await fetch('http://localhost:3000/projects'); // GET /api/projects
+    
       const projects = await response.json();
   
       const tableBody = document.getElementById('project-table-body');
@@ -48,6 +49,7 @@ async function addProject(event) {
   try {
     const response = await fetch('http://localhost:3000/projects', {
       method: 'POST', // POST /api/projects
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -110,6 +112,7 @@ async function saveProjectChanges() {
     // Send a PUT request to update the project
     const response = await fetch(`http://localhost:3000/projects/${projectId}`, {
       method: 'PUT',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
