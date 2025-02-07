@@ -13,7 +13,7 @@ router.get('/users/:id', UserController.getById); // Show user details
 router.delete('/users/:id', UserController.destroy); // Delete a user
 
 // Admin role management
-router.post('/users/:id/setAdmin', UserController.setAdmin); // Make user an admin
+router.put('/users/:id/setAdmin', isAuthenticated, isAdmin, UserController.promoteUser)
 router.post('/users/:id/removeAdmin', UserController.removeAdmin); // Remove admin privileges
 
 module.exports = router;
