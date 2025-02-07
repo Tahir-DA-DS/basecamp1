@@ -15,8 +15,6 @@ const ProjectController = {
       // Create the project
       const projectId = await Project.create({ name, description, userId });
 
-      console.log(projectId);
-      
 
       // Associate user with the project
       await ProjectUser.assign(userId, projectId);
@@ -66,11 +64,12 @@ const ProjectController = {
   // Update a project
   async update(req, res) {
     try {
-      const id = req.userid; ;
+      const projectId  = req.params.id;
+
       const updates = req.body;
 
       // Update the project
-      const updated = await Project.update(id, updates);
+      const updated = await Project.update(projectId, updates);
 
       if (!updated) {
         return res.status(404).json({ message: 'Project not found' });

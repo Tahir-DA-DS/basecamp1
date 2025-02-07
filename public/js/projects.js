@@ -13,16 +13,14 @@ async function fetchProjects() {
     const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`, // Include token in Authorization header
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-
     if (!response.ok) {
       if (response.status === 401) {
         alert('Unauthorized access. Please log in again.');
-        // Redirect to login page or take appropriate action
       }
       throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
@@ -31,10 +29,10 @@ async function fetchProjects() {
     console.log('Fetched Projects:', projects);
 
     const tableBody = document.getElementById('project-table-body');
-    tableBody.innerHTML = ''; // Clear existing rows
+    tableBody.innerHTML = '';
 
     if (projects.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="4">No projects found.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="5">No projects found.</td></tr>';
       return;
     }
 
@@ -45,9 +43,8 @@ async function fetchProjects() {
           <td>${project.name}</td>
           <td>${project.description}</td>
           <td>${project.userId}</td>
-
           <td>
-            <button class="btn btn-warning btn-sm" onclick="editProject(${project.id})">Edit</button>
+            <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
           </td>
         </tr>
@@ -56,9 +53,8 @@ async function fetchProjects() {
     });
   } catch (error) {
     console.error('Error fetching projects:', error);
-    const tableBody = document.getElementById('project-table-body');
-    tableBody.innerHTML =
-      '<tr><td colspan="4">Failed to load projects. Please try again later.</td></tr>';
+    document.getElementById('project-table-body').innerHTML =
+      '<tr><td colspan="5">Failed to load projects. Please try again later.</td></tr>';
   }
 }
 
@@ -137,17 +133,56 @@ async function addProject(event) {
 }
 
 //edit project
-async function editProject(projectId) {
+// async function editProject(projectId) {
+
+//   try {
+//     const token = getToken();
+
+//     const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+//       method: 'PUT',
+//       headers: {
+//         'Authorization': `Bearer ${token}`, // Include token in Authorization header
+//       'Content-Type': 'application/json',
+//       },  
+//     });
+
+//     if (!response.ok) {
+//       if (response.status === 401) {
+//         alert('Unauthorized access. Please log in again.');
+//         // Redirect to login page or take appropriate action
+//       }
+//       throw new Error(`Error: ${response.status} - ${response.statusText}`);
+//     }
+
+//     fetchProjects(); // Refresh the table
+//     const modal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
+//     if (modal) modal.hide();
+//   } catch (error) {
+//     console.error('Error updating project:', error);
+//     alert('Failed to update the project. Please try again.');
+//   }
+// }
+
+async function editProject(event) {
+  event.preventDefault(); // Prevent default form submission
+
+  const projectId = document.getElementById('edit-project-id').value;
+  const token = getToken();
+
+  const data = {
+    // Assuming your form has inputs with ids 'projectName' and 'projectDescription'
+    name: document.getElementById('edit-project-name').value,
+    description: document.getElementById('edit-project-description').value,
+  };
 
   try {
-    const token = getToken();
-
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-      method: 'UPDATE',
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`, // Include token in Authorization header
-      'Content-Type': 'application/json',
-      },  
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data), // Include the data in the request body
     });
 
     if (!response.ok) {
@@ -167,7 +202,85 @@ async function editProject(projectId) {
   }
 }
 
+async function saveProjectChanges() {
+  const projectId = document.getElementById('edit-project-id').value;
+  const name = document.getElementById('edit-project-name').value.trim();
+  const description = document.getElementById('edit-project-description').value.trim();
+
+  if (!name || !description) {
+    alert('Both project name and description are required.');
+    return;
+  }
+
+  try {
+    const token = getToken();
+
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+      method: 'PUT',  // Use PUT for updating data
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, description }), // Send updated data
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert('Unauthorized access. Please log in again.');
+      }
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    // Refresh the project list
+    fetchProjects();
+
+    // Close the modal after update
+    const modal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
+    if (modal) modal.hide();
+
+    // Reset form
+    document.getElementById('edit-project-form').reset();
+
+  } catch (error) {
+    console.error('Error updating project:', error);
+    alert('Failed to update the project. Please try again.');
+  }
+}
+
+
+async function loadProjectDetails(projectId) {
+  try {
+    const token = getToken();
+
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const project = await response.json();
+    
+    // Populate the edit form with project data
+    document.getElementById('edit-project-id').value = project.id;
+    document.getElementById('edit-project-name').value = project.name;
+    document.getElementById('edit-project-description').value = project.description;
+
+    // Open the modal
+    const modal = new bootstrap.Modal(document.getElementById('editProjectModal'));
+    modal.show();
+
+  } catch (error) {
+    console.error('Error loading project details:', error);
+    alert('Failed to load project details.');
+  }
+}
 // Initialize
 document.getElementById('add-project-form').addEventListener('submit', addProject);
-document.getElementById('edit-project-form').addEventListener('submit', editProject)
+document.getElementById('edit-project-form').addEventListener('submit', editProject);
 fetchProjects(); // Fetch projects directly on initialization
