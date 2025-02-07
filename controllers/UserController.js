@@ -1,82 +1,164 @@
 const User = require('../models/user');
+let bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken'); 
+require('dotenv').config()
 
 const UserController = {
-  // Create a new user (Sign up)
-  async create(req, res) {
-    const { email, password, firstname, lastname } = req.body;
-  
+  // Register a new user
+  async register(req, res) {
     try {
+      const { email, password, firstname, lastname } = req.body;
+  
       // Check if the user already exists
       const existingUser = await User.findByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ message: 'User with this email already exists' });
+        return res.status(409).json({ message: 'User with this email already exists' }); 
       }
   
-      // Create the user
-      const userId = await User.create({ email, password, firstname, lastname });
+      // Hash the password before saving
+      const hashedPassword = await bcrypt.hash(password, 10); 
   
-      // Send a structured JSON response
-      res.status(201).json({ message: 'User created successfully', userId });
+      // Create the new user
+      const newUser = await User.create({ 
+        email, 
+        password: hashedPassword, 
+        firstname, 
+        lastname 
+      });
+  
+      res.status(201).json({ message: 'User registered successfully', user: newUser }); 
     } catch (error) {
-      console.error('Error creating user:', error.message);
-  
-      // Send an error response
-      res.status(500).json({ message: 'Error creating user', error: error.message });
+      console.error('Error registering user:', error.message);
+      res.status(500).json({ message: 'Error registering user' }); 
     }
   },
 
-  // Show a specific user
-  async show(req, res) {
-    const { id } = req.params;    
+ 
+
+  async login(req, res) {
     try {
-      const user = await User.findById(id);
-      if (!user) return res.status(404).send('User not found');
-      res.status(200).json(user);
+      const { email, password } = req.body;
+  
+      // Validate credentials
+      const user = await User.validateCredentials(email, password);
+  
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+      const payLoad =  { userId: user.Id }
+      // Generate JWT token with expiration
+      const token = jwt.sign(
+        payLoad,
+        process.env.SECRET
+        // { expiresIn: '1h' } // Token expires in 1 hour
+      );
+  
+      // Return the token and minimal user info
+      res.status(200).json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: user.Id,
+          email: user.email,
+          name: user.name,
+        },
+      });
     } catch (error) {
-      res.status(500).send('Error fetching user');
+      console.error('Error logging in:', error.message);
+      res.status(500).json({ message: 'Internal Server Error' });
     }
   },
-   async getAllUser (req, res) {
+
+  // Logout a user
+  logout(req, res) {
+ 
+      res.clearCookie();
+  
+      res.status(200).json({ message: 'Logout successful' });
+    },
+
+  // Show all users
+  async showAll(req, res) {
     try {
       const users = await User.getAllUsers();
       res.status(200).json(users);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching users:', error.message);
       res.status(500).json({ message: 'Error fetching users' });
     }
   },
-  // Delete a user
+
+  // Get a user by ID
+  async getById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.status(200).json(user);
+    } catch (error) {
+      console.error('Error fetching user:', error.message);
+      res.status(500).json({ message: 'Error fetching user' });
+    }
+  },
+
+  // Delete a user by ID
   async destroy(req, res) {
-    const { id } = req.params;
     try {
-      await User.delete(id);
-      res.status(200).send('User deleted successfully');
+      const { id } = req.params;
+
+      const deleted = await User.delete(id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'User not found or already deleted' });
+      }
+
+      res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
-      res.status(500).send('Error deleting user');
+      console.error('Error deleting user:', error.message);
+      res.status(500).json({ message: 'Error deleting user' });
     }
   },
 
-  // Set a user as admin
-  async setAdmin(req, res) {
-    const { id } = req.params;
+
+   // Set admin privileges for a user
+   async setAdmin(req, res) {
     try {
-      await User.setRole(id, 'admin');
-      res.status(200).send('User is now an admin');
+      const { id } = req.params;
+
+      const updated = await User.setRole(id, 'admin');
+      if (!updated) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.status(200).json({ message: 'Admin privileges granted successfully' });
     } catch (error) {
-      res.status(500).send('Error setting admin');
+      console.error('Error setting admin privileges:', error.message);
+      res.status(500).json({ message: 'Error setting admin privileges' });
     }
   },
 
-  // Remove admin privileges
+  // Remove admin privileges for a user
   async removeAdmin(req, res) {
-    const { id } = req.params;
     try {
-      await User.setRole(id, 'user');
-      res.status(200).send('Admin privileges removed');
+      const { id } = req.params;
+
+      const updated = await User.setRole(id, 'user');
+      if (!updated) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.status(200).json({ message: 'Admin privileges removed successfully' });
     } catch (error) {
-      res.status(500).send('Error removing admin');
+      console.error('Error removing admin privileges:', error.message);
+      res.status(500).json({ message: 'Error removing admin privileges' });
     }
   },
 };
+function generateRefreshToken(user){
+  return jwt.sign(user, process.env.REFERESH_TOKEN, {expiresIn:'15m'})
+} 
 
 module.exports = UserController;

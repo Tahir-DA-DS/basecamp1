@@ -1,7 +1,7 @@
 // Fetch and display all users
 async function fetchUsers() {
     try {
-      const response = await fetch('http://localhost:3000/users'); // GET /api/users
+      const response = await fetch('http://localhost:3000/users', { credentials: 'include' }); // GET /api/users
       const users = await response.json();
   
       const tableBody = document.getElementById('user-table-body');
@@ -15,8 +15,8 @@ async function fetchUsers() {
             <td>${user.Firstname}</td>
             <td>${user.Lastname}</td>
             <td>
-              <button class="btn btn-warning btn-sm" onclick="editUser(${user.id})">Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">Delete</button>
+              <button class="btn btn-warning btn-sm" onclick="editUser(${user.Id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.Id})">Delete</button>
             </td>
           </tr>
         `;

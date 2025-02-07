@@ -5,21 +5,21 @@ const User = {
   // Create a new user
   async create({ email, password, firstname, lastname }) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = `INSERT INTO User (Email, Password, Firstname, Lastname) VALUES (?, ?, ?, ?)`;
+    const sql = `INSERT INTO Users (Email, Password, Firstname, Lastname) VALUES (?, ?, ?, ?)`;
     const [result] = await db.execute(sql, [email, hashedPassword, firstname, lastname]);
     return result.insertId; // Return the ID of the newly created user
   },
 
   // Find a user by email
   async findByEmail(email) {
-    const sql = `SELECT * FROM User WHERE Email = ?`;
+    const sql = `SELECT * FROM Users WHERE Email = ?`;
     const [rows] = await db.execute(sql, [email]);
     return rows.length ? rows[0] : null; // Return the user or null if not found
   },
 
   // Find a user by ID
   async findById(id) {
-    const sql = `SELECT * FROM User WHERE Id = ?`;
+    const sql = `SELECT * FROM Users WHERE Id = ?`;
     const [rows] = await db.execute(sql, [id]);
     return rows.length ? rows[0] : null; // Return the user or null if not found
   },
@@ -27,8 +27,8 @@ const User = {
   // Get all users
   async getAllUsers() {
     try {
-      const sql = `SELECT * FROM User`;
-      const [rows] = await db.query(sql);
+      const sql = `SELECT * FROM Users`;
+      const [rows] = await db.execute(sql);
       return rows; // Return all rows (users)
     } catch (error) {
       console.error('Error fetching users:', error.message);
@@ -38,7 +38,7 @@ const User = {
 
   // Delete a user by ID
   async delete(id) {
-    const sql = `DELETE FROM User WHERE Id = ?`;
+    const sql = `DELETE FROM Users WHERE Id = ?`;
     const [result] = await db.execute(sql, [id]);
     return result.affectedRows > 0; // Return true if a row was deleted
   },
@@ -59,7 +59,7 @@ const User = {
   // Assign a role to a user (requires an IsAdmin column in the schema)
   async setRole(userId, role) {
     const isAdmin = role === 'admin' ? 1 : 0;
-    const sql = `UPDATE User SET IsAdmin = ? WHERE Id = ?`;
+    const sql = `UPDATE Users SET IsAdmin = ? WHERE Id = ?`;
     const [result] = await db.execute(sql, [isAdmin, userId]);
     return result.affectedRows > 0; // Return true if the update succeeded
   },

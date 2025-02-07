@@ -1,22 +1,21 @@
+const jwt = require('jsonwebtoken');
+require('dotenv').config()
+
 const authenticate = (req, res, next) => {
-  // console.log(req.session.id);
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   
-    if (!req.session || !req.session.id) {
+  if (token==null) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  jwt.verify(token, process.env.SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
+   
+    req.userid = user.userId;
 
     
-      
-      
-      
-      // If no session or user is found, the user is unauthorized
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-  
-    // Attach the session user data to the request object
-    req.user = req.session.user;
-  
-    // Proceed to the next middleware or route handler
     next();
-  };
-  
-  module.exports = authenticate;
+  });
+};
+
+module.exports = authenticate;

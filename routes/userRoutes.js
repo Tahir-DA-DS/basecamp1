@@ -3,10 +3,14 @@ const UserController = require('../controllers/UserController');
 const router = express.Router();
 
 // User registration
-router.post('/users', UserController.create); // Create a new user
-router.get('/users/:id', UserController.show); // Show user details
+router.post('/users', UserController.register); // Create a new user
+//loginlogout
+router.post('/sessions/sign_in',  UserController.login); // Log in a user
+router.post('/sessions/sign_out', UserController.logout); // Log out a user
+
+router.get('/users', UserController.showAll);
+router.get('/users/:id', UserController.getById); // Show user details
 router.delete('/users/:id', UserController.destroy); // Delete a user
-router.get('/users', UserController.getAllUser);
 
 // Admin role management
 router.post('/users/:id/setAdmin', UserController.setAdmin); // Make user an admin

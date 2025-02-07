@@ -1,135 +1,166 @@
+const API_BASE_URL = 'http://localhost:3000';
+
+// Get the stored token from localStorage
+function getToken() {
+  return localStorage.getItem('token');
+}
+
 // Fetch and display all projects
 async function fetchProjects() {
-    try {
-      const response = await fetch('http://localhost:3000/projects'); // GET /api/projects
-    
-      const projects = await response.json();
-  
-      const tableBody = document.getElementById('project-table-body');
-      tableBody.innerHTML = ''; // Clear existing rows
-  
-      projects.forEach(project => {
-        const row = `
-          <tr>
-            <td>${project.Id}</td>
-            <td>${project.Name}</td>
-            <td>${project.description}</td>
+  try {
+    const token = getToken();
 
-            <td>
-              <button class="btn btn-warning btn-sm" onclick="editProject(${project.Id})">Edit</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.Id})">Delete</button>
-            </td>
-          </tr>
-        `;
-        tableBody.innerHTML += row;
-      });
-    } catch (error) {
-      console.error('Error fetching projects:', error)
-    }
-  }
-  
-  // Delete a project
-  async function deleteProject(projectId) {
-    try {
-      await fetch(`http://localhost:3000/projects/${projectId}`, { method: 'DELETE' }); // DELETE /api/projects/:id
-      fetchProjects(); // Refresh the table
-    } catch (error) {
-      console.error('Error deleting project:', error);
-    }
-  }
-  
-  // Add a new project
-async function addProject(event) {
-  event.preventDefault(); // Prevent form submission from refreshing the page
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`, // Include token in Authorization header
+        'Content-Type': 'application/json',
+      },
+    });
 
-  // Get project details from the form
-  const name = document.getElementById('project-name').value;
-  const description = document.getElementById('project-description').value;
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert('Unauthorized access. Please log in again.');
+        // Redirect to login page or take appropriate action
+      }
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const projects = await response.json();
+    console.log('Fetched Projects:', projects);
+
+    const tableBody = document.getElementById('project-table-body');
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    if (projects.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="4">No projects found.</td></tr>';
+      return;
+    }
+
+    projects.forEach((project) => {
+      const row = `
+        <tr>
+          <td>${project.id}</td>
+          <td>${project.name}</td>
+          <td>${project.description}</td>
+          <td>${project.userId}</td>
+
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="editProject(${project.id})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
+          </td>
+        </tr>
+      `;
+      tableBody.innerHTML += row;
+    });
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    const tableBody = document.getElementById('project-table-body');
+    tableBody.innerHTML =
+      '<tr><td colspan="4">Failed to load projects. Please try again later.</td></tr>';
+  }
+}
+
+// Delete a project
+async function deleteProject(projectId) {
+  if (!confirm('Are you sure you want to delete this project?')) return;
 
   try {
-    const response = await fetch('http://localhost:3000/projects', {
-      method: 'POST', // POST /api/projects
-      credentials: 'include',
+    const token = getToken();
+
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+      method: 'DELETE',
       headers: {
+        'Authorization': `Bearer ${token}`, // Include token in Authorization header
+      'Content-Type': 'application/json',
+      },  
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert('Unauthorized access. Please log in again.');
+        // Redirect to login page or take appropriate action
+      }
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    fetchProjects(); // Refresh the table
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    alert('Failed to delete the project. Please try again.');
+  }
+}
+
+// Add a new project
+async function addProject(event) {
+  event.preventDefault();
+
+  const name = document.getElementById('project-name').value.trim();
+  const description = document.getElementById('project-description').value.trim();
+
+  if (!name || !description) {
+    alert('Both project name and description are required.');
+    return;
+  }
+
+  try {
+    const token = getToken();
+
+    const response = await fetch(`${API_BASE_URL}/projects`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`, // Include token in Authorization header
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ name, description }),
     });
 
-    if (response.ok) {
-      fetchProjects(); // Refresh the table to show the new project
-      const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
-      modal.hide(); // Close the modal
-      document.getElementById('add-project-form').reset(); // Reset the form
-    } else {
-      console.error('Failed to add project:', response.statusText);
+   
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert('Unauthorized access. Please log in again.');
+        // Redirect to login page or take appropriate action
+      }
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
+
+    fetchProjects(); // Refresh the table
+    const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
+    if (modal) modal.hide();
+    document.getElementById('add-project-form').reset();
   } catch (error) {
     console.error('Error adding project:', error);
+    alert('Failed to add the project. Please try again.');
   }
 }
 
+//edit project
 async function editProject(projectId) {
+
   try {
-    // Fetch the current project details
-    const response = await fetch(`http://localhost:3000/projects/${projectId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch project details: ${response.statusText}`);
-    }
+    const token = getToken();
 
-    const project = await response.json();
-
-    // Pre-fill the modal form with the current project details
-    document.getElementById('edit-project-id').value = project.Id; // Hidden input for ID
-    document.getElementById('edit-project-name').value = project.Name;
-    document.getElementById('edit-project-description').value = project.description;
-
-    // Show the modal
-    const editProjectModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
-    editProjectModal.show();
-  } catch (error) {
-    console.error('Error fetching project details:', error);
-    alert('Failed to load project details. Please try again.');
-  }
-}
-async function saveProjectChanges() {
-  try {
-    const projectId = document.getElementById('edit-project-id').value;
-    const projectName = document.getElementById('edit-project-name').value.trim();
-    const projectDescription = document.getElementById('edit-project-description').value.trim();
-
-    // Validate input
-    if (!projectName || !projectDescription) {
-      alert('Both project name and description are required.');
-      return;
-    }
-
-    // Confirm before saving changes
-    if (!confirm('Are you sure you want to save these changes?')) {
-      return;
-    }
-
-    // Send a PUT request to update the project
-    const response = await fetch(`http://localhost:3000/projects/${projectId}`, {
-      method: 'PUT',
-      credentials: 'include',
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+      method: 'UPDATE',
       headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: projectName,
-        description: projectDescription,
-      }),
+        'Authorization': `Bearer ${token}`, // Include token in Authorization header
+      'Content-Type': 'application/json',
+      },  
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to update project: ${response.statusText}`);
+      if (response.status === 401) {
+        alert('Unauthorized access. Please log in again.');
+        // Redirect to login page or take appropriate action
+      }
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
 
-    // Close the modal and refresh the project list
-    const editProjectModal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
-    editProjectModal.hide();
-    fetchProjects(); // Reload the project list
+    fetchProjects(); // Refresh the table
+    const modal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
+    if (modal) modal.hide();
   } catch (error) {
     console.error('Error updating project:', error);
     alert('Failed to update the project. Please try again.');
@@ -137,6 +168,6 @@ async function saveProjectChanges() {
 }
 
 // Initialize
-document.getElementById('add-project-form').addEventListener('submit', addProject); // Handle form submission
-
-fetchProjects();
+document.getElementById('add-project-form').addEventListener('submit', addProject);
+document.getElementById('edit-project-form').addEventListener('submit', editProject)
+fetchProjects(); // Fetch projects directly on initialization

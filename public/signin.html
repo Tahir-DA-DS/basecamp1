@@ -54,6 +54,7 @@
 
         if (response.ok) {
           const data = await response.json();
+          localStorage.setItem("token", data.token);
           alert('Sign in successful!');
           console.log('Token:', data.token); // Store token if needed for authentication
           // Redirect to the dashboard or another page
