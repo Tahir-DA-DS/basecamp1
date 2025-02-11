@@ -1,36 +1,68 @@
 // Fetch all users (Admins only)
-async function fetchUsers() {
-    try {
-        const response = await fetch('/api/admin/users', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
 
-        const users = await response.json();
-        const userTable = document.getElementById('user-table-body');
-        userTable.innerHTML = '';
+document.addEventListener("DOMContentLoaded", function () {
+  const authToken = localStorage.getItem("token"); // Assuming user token is stored
+  if (!authToken) {
+      alert("Unauthorized access. Please log in.");
+      window.location.href = "index.html";
+      return;
+  }
 
-        users.forEach(user => {
-            const row = `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.email}</td>
-                    <td>${user.IsAdmin ? 'Admin' : 'User'}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">Delete</button>
-                    </td>
-                </tr>
-            `;
-            userTable.innerHTML += row;
-        });
-    } catch (error) {
-        console.error('Error fetching users:', error);
-    }
+  fetch("http://localhost:3000/me", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${authToken}` },
+  })
+  .then(response => response.json())  
+  .then(user => {
+      if (!user.isAdmin) {
+          alert("Access Denied. Admins only.");
+          window.location.href = "index.html";
+      } else {
+          loadUsers();
+          loadProjects();
+      }
+  })
+  .catch((error) => {
+      alert(error)
+      alert("Session expired. Please log in again.");
+      window.location.href = "index.html";
+  });
+});
+
+
+function loadUsers() {
+  fetch("http://localhost:3000/users", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(response => response.json())
+      .then(users => {
+          const userTableBody = document.getElementById("user-table-body");
+          userTableBody.innerHTML = "";
+
+          users.forEach(user => {
+              const row = document.createElement("tr");
+
+              row.innerHTML = `
+                  <td>${user.Id}</td>
+                  <td>${user.Email}</td>
+                  <td>${user.IsAdmin ? "Admin" : "User"}</td>
+                  <td>
+                      ${!user.IsAdmin ? 
+                          `<button class="btn btn-success btn-sm" onclick="makeAdmin(${user.Id})">Make Admin</button>` : 
+                          `<button class="btn btn-warning btn-sm" onclick="removeAdmin(${user.Id})">Remove Admin</button>`
+                      }
+                      <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.Id})">Delete</button>
+                  </td>
+              `;
+
+              userTableBody.appendChild(row);
+          });
+      })
+      .catch(error => console.error("Error loading users:", error));
 }
 
 // Fetch all projects (Admins only)
-async function fetchProjects() {
+async function loadProjects() {
     try {
-        const response = await fetch('/api/admin/projects', {
+        const response = await fetch('http://localhost:3000/projects/all', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
 
@@ -58,16 +90,28 @@ async function fetchProjects() {
 }
 
 // Delete a user (Admins only)
-async function deleteUser(userId) {
-    try {
-        await fetch(`/api/admin/users/${userId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        fetchUsers();
-    } catch (error) {
-        console.error('Error deleting user:', error);
-    }
+// async function deleteUser(userId) {
+//     try {
+//         await fetch(`http://localhost:3000/users/${userId}`, {
+//             method: 'DELETE',
+//             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+//         });
+//         loadUsers();
+//     } catch (error) {
+//         console.error('Error deleting user:', error);
+//     }
+// }
+
+function deleteUser(userId) {
+  fetch(`http://localhost:3000/users/${userId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  })
+  .then(() => {
+      alert("User deleted.");
+      loadUsers();
+  })
+  .catch(error => console.error("Error deleting user:", error));
 }
 
 // Delete a project (Admins only)
@@ -77,7 +121,7 @@ async function deleteProject(projectId) {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        fetchProjects();
+        loadProjects();
     } catch (error) {
         console.error('Error deleting project:', error);
     }
@@ -132,6 +176,8 @@ async function promoteToAdmin(userId) {
     }
   }
   
-// Run functions on page load
-fetchUsers();
-fetchProjects();
+
+
+
+// fetchUsers();
+// fetchProjects();

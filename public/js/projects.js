@@ -167,6 +167,7 @@ async function editProject(event) {
   event.preventDefault(); // Prevent default form submission
 
   const projectId = document.getElementById('edit-project-id').value;
+  
   const token = getToken();
 
   const data = {
@@ -248,28 +249,35 @@ async function saveProjectChanges() {
 }
 
 
-async function loadProjectDetails(projectId) {
+async function loadProjectDetails() {
   try {
     const token = getToken();
 
-    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
-
+    
     if (!response.ok) {
       throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
-
-    const project = await response.json();
     
-    // Populate the edit form with project data
-    document.getElementById('edit-project-id').value = project.id;
-    document.getElementById('edit-project-name').value = project.name;
-    document.getElementById('edit-project-description').value = project.description;
+    const data = await response.json();
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      console.error("No projects found");
+      return;
+    }
+    
+    // Assuming you want to edit the first project in the list
+    const project = data[0]; 
+    
+    document.getElementById('edit-project-id').value = project.id || '';
+    document.getElementById('edit-project-name').value = project.name || '';
+    document.getElementById('edit-project-description').value = project.description || '';
 
     // Open the modal
     const modal = new bootstrap.Modal(document.getElementById('editProjectModal'));

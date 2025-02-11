@@ -1,6 +1,7 @@
 // controllers/ProjectController.js
 const Project = require('../models/Project');
 const ProjectUser = require('../models/ProjectUser');
+const { getById} = require('./UserController');
 
 const ProjectController = {
   // Create a new project
@@ -27,7 +28,7 @@ const ProjectController = {
   },
 
   // Get all projects
-  async getAll(req, res) {
+  async getUniqueProject(req, res) {
     try {
       const userId = req.userid; 
 
@@ -45,10 +46,10 @@ const ProjectController = {
   },
 
   // Get a specific project
-  async getById(req, res) {
+  async getAll(req, res) {
     try {
-      const { id } = req.params;
-      const project = await Project.findById(id);
+  
+      const project = await Project.getAll();
 
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
@@ -66,6 +67,8 @@ const ProjectController = {
     try {
       const projectId  = req.params.id;
 
+      console.log(projectId);
+      
       const updates = req.body;
 
       // Update the project

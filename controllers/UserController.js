@@ -1,6 +1,6 @@
 const User = require('../models/user');
 let bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken'); 
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 
 const UserController = {
@@ -37,43 +37,36 @@ const UserController = {
 
   async login(req, res) {
     try {
-      const { email, password } = req.body;
-  
-      // Validate credentials
-      const user = await User.validateCredentials(email, password);
-  
-      if (!user) {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
-  
-      // Token payload
-      const payLoad = { 
-        userId: user.Id,
-        isAdmin: user.IsAdmin === 1  // Ensure it's a boolean
-      };
-  
-      // Generate JWT token with expiration
-      const token = jwt.sign(
-        payLoad,
-        process.env.SECRET,
-        { expiresIn: '1h' } // Token expires in 1 hour
-      );
-  
-      // Return token and user info
-      res.status(200).json({
-        message: 'Login successful',
-        token,
-        user: {
-          id: user.Id,
-          email: user.Email,
-          isAdmin: user.IsAdmin === 1, // Ensure it's a boolean
-        },
-      });
+        const { email, password } = req.body;
+
+        // Validate credentials
+        const user = await User.validateCredentials(email, password);
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        const payLoad = { userId: user.Id, isAdmin: user.IsAdmin };  // Include admin status in JWT
+
+        // Generate JWT token
+        const token = jwt.sign(payLoad, process.env.SECRET);
+
+        // Return token and user info
+        res.status(200).json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user.Id,
+                email: user.email,
+                name: `${user.Firstname} ${user.Lastname}`,
+                isAdmin: user.IsAdmin,  // Send admin status
+            },
+        });
     } catch (error) {
-      console.error('Error logging in:', error.message);
-      res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error logging in:', error.message);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-  },
+},
 
   // Logout a user
   logout(req, res) {
@@ -94,6 +87,14 @@ const UserController = {
     }
   },
 
+  async authUser(req, res) {
+    try {
+        // Send userId and isAdmin from decoded token (req.user)
+        res.json({ userId: req.user.userId, isAdmin: req.user.isAdmin });
+    } catch (error) {
+        res.status(500).json({ message: "Error retrieving user details" });
+    }
+},
   // Get a user by ID
   async getById(req, res) {
     try {
@@ -114,9 +115,9 @@ const UserController = {
   // Delete a user by ID
   async destroy(req, res) {
     try {
-      const { id } = req.params;
+      const userId = req.userid
 
-      const deleted = await User.delete(id);
+      const deleted = await User.delete( userId);
       if (!deleted) {
         return res.status(404).json({ message: 'User not found or already deleted' });
       }
@@ -196,8 +197,6 @@ const UserController = {
   
 
 };
-function generateRefreshToken(user){
-  return jwt.sign(user, process.env.REFERESH_TOKEN, {expiresIn:'15m'})
-} 
+
 
 module.exports = UserController;

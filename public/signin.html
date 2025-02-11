@@ -39,35 +39,62 @@
   </div>
 
   <script>
-    document.getElementById('signinForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // document.getElementById('signinForm').addEventListener('submit', async (e) => {
+    //   e.preventDefault();
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+    //   const email = document.getElementById('email').value;
+    //   const password = document.getElementById('password').value;
 
-      try {
-        const response = await fetch('http://localhost:3000/sessions/sign_in', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
+    //   try {
+    //     const response = await fetch('http://localhost:3000/sessions/sign_in', {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //       body: JSON.stringify({ email, password }),
+    //     });
 
-        if (response.ok) {
-          const data = await response.json();
-          localStorage.setItem("token", data.token);
-          alert('Sign in successful!');
-          console.log('Token:', data.token); // Store token if needed for authentication
-          // Redirect to the dashboard or another page
-          window.location.href = 'projects.html';
-        } else {
-          const { message } = await response.json();
-          alert(`Error: ${message}`);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Something went wrong!');
-      }
+    //     if (response.ok) {
+    //       const data = await response.json();
+    //       localStorage.setItem("token", data.token);
+    //       alert('Sign in successful!');
+    //       console.log('Token:', data.token); // Store token if needed for authentication
+    //       // Redirect to the dashboard or another page
+    //       window.location.href = 'projects.html';
+    //     } else {
+    //       const { message } = await response.json();
+    //       alert(`Error: ${message}`);
+    //     }
+    //   } catch (error) {
+    //     console.error('Error:', error);
+    //     alert('Something went wrong!');
+    //   }
+    // });
+    document.getElementById("signinForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const response = await fetch("http://localhost:3000/sessions/sign_in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
     });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("isAdmin", data.user.isAdmin); // Store admin status
+
+        if (data.user.isAdmin) {
+            window.location.href = "admin.html"; // Redirect to admin page
+        } else {
+            window.location.href = "projects.html"; // Redirect to user dashboard
+        }
+    } else {
+        alert(data.message);
+    }
+});
   </script>
 </body>
 </html>
