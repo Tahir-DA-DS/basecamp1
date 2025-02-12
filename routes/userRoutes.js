@@ -7,7 +7,7 @@ const isAdmin = require('../middleware/isAdmin')
 // User registration
 router.post('/users', UserController.register); // Create a new user
 //loginlogout
-router.post('/sessions/sign_in',  UserController.login); // Log in a user
+router.post('/sessions/sign_in', UserController.login); // Log in a user
 router.post('/sessions/sign_out', UserController.logout); // Log out a user
 
 router.get('/users', isAuthenticated, isAdmin, UserController.showAll);

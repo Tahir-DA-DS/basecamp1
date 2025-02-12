@@ -117,7 +117,7 @@ function deleteUser(userId) {
 // Delete a project (Admins only)
 async function deleteProject(projectId) {
     try {
-        await fetch(`/api/admin/projects/${projectId}`, {
+        await fetch(`http://localhost:3000/projects/${projectId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });

@@ -4,9 +4,8 @@ const bcrypt = require('bcryptjs');
 const User = {
   // Create a new user
   async create({ email, password, firstname, lastname }) {
-    const hashedPassword = await bcrypt.hash(password, 10);
     const sql = `INSERT INTO Users (Email, Password, Firstname, Lastname) VALUES (?, ?, ?, ?)`;
-    const [result] = await db.execute(sql, [email, hashedPassword, firstname, lastname]);
+    const [result] = await db.execute(sql, [email, password, firstname, lastname]);
     return result.insertId; // Return the ID of the newly created user
   },
 
@@ -44,17 +43,82 @@ const User = {
   },
 
   // Validate user credentials
+  // async validateCredentials(email, password) {
+  //   const user = await this.findByEmail(email);
+
+  //   if (!user) {
+  //     throw new Error('User not found');
+  //   }
+
+  //   console.log("Entered Password:", password);
+  //   console.log("Stored Hashed Password:", user.Password);
+
+  //   const isPasswordValid = await bcrypt.compare(password.trim(), user.Password.trim());
+    
+    
+  //   if (!isPasswordValid) {
+  //     throw new Error('Invalid password');
+  //   }
+  //   return user;
+  // },
+
+//  async validateCredentials(email, password) {
+//     try {
+//       const user = await User.findByEmail(email); // Find the user by email
+      
+//       if (!user) {
+//         return null; // User not found
+//       }
+//       console.log("Hash from DB (JSON.stringified):", JSON.stringify(user.Password));
+      
+//       const isPasswordValid = await bcrypt.compare(password, user.Password); // Compare passwords
+     
+//       if (isPasswordValid) {
+//         return user; // Return the user object if passwords match
+//       } else {
+//         return null; // Passwords don't match
+//       }
+//     } catch (error) {
+//       console.error("Error validating credentials:", error);
+//       throw error; // Re-throw the error for handling in the login route
+//     }
+//   },
+
   async validateCredentials(email, password) {
+    console.log("Validating Credentials for:", email);
+
     const user = await this.findByEmail(email);
+    console.log("User from DB:", user);
+
     if (!user) {
-      throw new Error('User not found');
+        console.error("User not found!");
+        throw new Error("User not found");
     }
-    const isPasswordValid = await bcrypt.compare(password, user.Password);
+
+    console.log("Entered Password:", password);
+    console.log("Stored Hashed Password:", user.Password);
+
+    if (!user.Password) {
+        console.error("User has no password stored!");
+        throw new Error("No password found for user.");
+    }
+
+    const modifiedHash = user.Password.replace("$2y$", "$2y$");
+    const isPasswordValid = await bcrypt.compare(password, modifiedHash);
+    console.log("Fixed Hash Match:", isPasswordValid);
+
+    // const isPasswordValid = await bcrypt.compare(password, user.Password);
+    console.log("Password Match:", isPasswordValid);
+
+
+
     if (!isPasswordValid) {
-      throw new Error('Invalid password');
+        console.error("Password does not match!");
+        throw new Error("Invalid password");
     }
+
     return user;
-  },
+},
 
   // Assign a role to a user (requires an IsAdmin column in the schema)
   async setRole(userId, role) {

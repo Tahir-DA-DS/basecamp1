@@ -1,71 +1,105 @@
 const User = require('../models/user');
-let bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const saltRounds = 10;
 require('dotenv').config()
 
 const UserController = {
-  // Register a new user
   async register(req, res) {
     try {
-      const { email, password, firstname, lastname } = req.body;
-  
-      // Check if the user already exists
-      const existingUser = await User.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({ message: 'User with this email already exists' }); 
-      }
-  
-      // Hash the password before saving
-      const hashedPassword = await bcrypt.hash(password, 10); 
-  
-      // Create the new user
-      const newUser = await User.create({ 
-        email, 
-        password: hashedPassword, 
-        firstname, 
-        lastname 
-      });
-  
-      res.status(201).json({ message: 'User registered successfully', user: newUser }); 
+        let { email, password, firstname, lastname } = req.body;
+
+        // Normalize input: trim spaces and lowercase email
+        email = email.trim().toLowerCase();
+        firstname = firstname.trim();
+        lastname = lastname.trim();
+        password = password.trim(); 
+
+        // Check if the user already exists
+        const existingUser = await User.findByEmail(email);
+        if (existingUser) {
+            return res.status(409).json({ message: 'User with this email already exists' });
+        }
+
+        // Hash the password before saving
+        let hashedPassword;
+        try {
+            hashedPassword = await bcrypt.hash(password, saltRounds);
+        } catch (hashError) {
+            console.error('Error hashing password:', hashError.message);
+            return res.status(500).json({ message: 'Error hashing password' });
+        }
+
+        // Create the new user with the hashed password
+        const newUser = await User.create({ 
+            email, 
+            password: hashedPassword, 
+            firstname, 
+            lastname 
+        });
+        // Return success response without sending the password
+        res.status(201).json({ 
+            message: 'User registered successfully', 
+            user: {
+                id: newUser.Id,
+                email: newUser.email,
+                firstname: newUser.firstname,
+                lastname: newUser.lastname
+            }
+        }); 
     } catch (error) {
-      console.error('Error registering user:', error.message);
-      res.status(500).json({ message: 'Error registering user' }); 
+        console.error('Error registering user:', error.message);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-  },
+},
 
  
 
-  async login(req, res) {
-    try {
-        const { email, password } = req.body;
+async login(req, res) {
+  try {
+      const { email, password } = req.body;
 
-        // Validate credentials
-        const user = await User.validateCredentials(email, password);
+      // Trim input
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedPassword = password.trim();
 
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
+      // Get user from database
+      const user = await User.findByEmail(trimmedEmail);
+      if (!user) {
+          return res.status(401).json({ message: 'Invalid email or password' });
+      }
 
-        const payLoad = { userId: user.Id, isAdmin: user.IsAdmin };  // Include admin status in JWT
+      // Debugging logs
+      console.log("Entered Password:", trimmedPassword);
+      console.log("Stored Hash:", user.Password);
 
-        // Generate JWT token
-        const token = jwt.sign(payLoad, process.env.SECRET);
+      // Ensure stored hash is correct and compare passwords
+      const isPasswordValid = await bcrypt.compare(trimmedPassword, user.Password);
 
-        // Return token and user info
-        res.status(200).json({
-            message: 'Login successful',
-            token,
-            user: {
-                id: user.Id,
-                email: user.email,
-                name: `${user.Firstname} ${user.Lastname}`,
-                isAdmin: user.IsAdmin,  // Send admin status
-            },
-        });
-    } catch (error) {
-        console.error('Error logging in:', error.message);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+      console.log("Password Match:", isPasswordValid);
+
+      if (!isPasswordValid) {
+          return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      // Create JWT token
+      const payLoad = { userId: user.Id, isAdmin: user.IsAdmin };
+      const token = jwt.sign(payLoad, process.env.SECRET);
+
+      res.status(200).json({
+          message: 'Login successful',
+          token,
+          user: {
+              id: user.Id,
+              email: user.Email,
+              name: `${user.Firstname} ${user.Lastname}`,
+              isAdmin: user.IsAdmin,
+          },
+      });
+  } catch (error) {
+      console.error('Error logging in:', error.message);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
 },
 
   // Logout a user
