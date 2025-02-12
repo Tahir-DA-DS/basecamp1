@@ -69,14 +69,9 @@ async login(req, res) {
           return res.status(401).json({ message: 'Invalid email or password' });
       }
 
-      // Debugging logs
-      console.log("Entered Password:", trimmedPassword);
-      console.log("Stored Hash:", user.Password);
-
       // Ensure stored hash is correct and compare passwords
       const isPasswordValid = await bcrypt.compare(trimmedPassword, user.Password);
 
-      console.log("Password Match:", isPasswordValid);
 
       if (!isPasswordValid) {
           return res.status(401).json({ message: 'Invalid email or password' });
@@ -149,19 +144,18 @@ async login(req, res) {
   // Delete a user by ID
   async destroy(req, res) {
     try {
-      const userId = req.userid
+        const userId = req.params.id; // Correctly get userId from request params
+        const deleted = await User.delete(userId); // Call your separate SQL function
+        if (!deleted) {
+            return res.status(404).json({ message: "User not found or already deleted" });
+        }
 
-      const deleted = await User.delete( userId);
-      if (!deleted) {
-        return res.status(404).json({ message: 'User not found or already deleted' });
-      }
-
-      res.status(200).json({ message: 'User deleted successfully' });
+        res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
-      console.error('Error deleting user:', error.message);
-      res.status(500).json({ message: 'Error deleting user' });
+        console.error("Error deleting user:", error.message);
+        res.status(500).json({ message: "Error deleting user" });
     }
-  },
+},
 
 
   // Remove admin privileges for a user

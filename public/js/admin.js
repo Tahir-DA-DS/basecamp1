@@ -102,18 +102,43 @@ async function loadProjects() {
 //     }
 // }
 
+// function deleteUser(userId) {
+//   fetch(`http://localhost:3000/users/${userId}`, {
+//       method: "DELETE",
+//       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//   })
+//   .then(() => {
+//       alert("User deleted.");
+//       loadUsers();
+//   })
+//   .catch(error => console.error("Error deleting user:", error));
+// }
+
 function deleteUser(userId) {
+  if (!confirm("Are you sure you want to delete this user?")) return; // Confirmation prompt
+
   fetch(`http://localhost:3000/users/${userId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      headers: { 
+          "Content-Type": "application/json", // Ensure JSON request format
+          Authorization: `Bearer ${localStorage.getItem("token")}` 
+      },
   })
-  .then(() => {
-      alert("User deleted.");
-      loadUsers();
+  .then(response => {
+      if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || "Failed to delete user"); });
+      }
+      return response.json();
   })
-  .catch(error => console.error("Error deleting user:", error));
+  .then(data => {
+      alert(data.message || "User deleted successfully.");
+      loadUsers(); // Refresh user list
+  })
+  .catch(error => {
+      console.error("Error deleting user:", error.message);
+      alert(`Error: ${error.message}`);
+  });
 }
-
 // Delete a project (Admins only)
 async function deleteProject(projectId) {
     try {
