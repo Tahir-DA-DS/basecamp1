@@ -46,7 +46,7 @@ function loadUsers() {
                   <td>${user.IsAdmin ? "Admin" : "User"}</td>
                   <td>
                       ${!user.IsAdmin ? 
-                          `<button class="btn btn-success btn-sm" onclick="makeAdmin(${user.Id})">Make Admin</button>` : 
+                          `<button class="btn btn-success btn-sm" onclick="promoteToAdmin(${user.Id})">Make Admin</button>` : 
                           `<button class="btn btn-warning btn-sm" onclick="removeAdmin(${user.Id})">Remove Admin</button>`
                       }
                       <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.Id})">Delete</button>
@@ -89,30 +89,6 @@ async function loadProjects() {
     }
 }
 
-// Delete a user (Admins only)
-// async function deleteUser(userId) {
-//     try {
-//         await fetch(`http://localhost:3000/users/${userId}`, {
-//             method: 'DELETE',
-//             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-//         });
-//         loadUsers();
-//     } catch (error) {
-//         console.error('Error deleting user:', error);
-//     }
-// }
-
-// function deleteUser(userId) {
-//   fetch(`http://localhost:3000/users/${userId}`, {
-//       method: "DELETE",
-//       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-//   })
-//   .then(() => {
-//       alert("User deleted.");
-//       loadUsers();
-//   })
-//   .catch(error => console.error("Error deleting user:", error));
-// }
 
 function deleteUser(userId) {
   if (!confirm("Are you sure you want to delete this user?")) return; // Confirmation prompt
@@ -151,11 +127,12 @@ async function deleteProject(projectId) {
         console.error('Error deleting project:', error);
     }
 }
+
 async function promoteToAdmin(userId) {
     if (!confirm('Are you sure you want to make this user an admin?')) return;
   
     try {
-      const response = await fetch(`/api/admin/users/${userId}/promote`, {
+      const response = await fetch(`http://localhost:3000/users/${userId}/setAdmin`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`, // Include token if needed
@@ -165,7 +142,7 @@ async function promoteToAdmin(userId) {
   
       if (response.ok) {
         alert('User successfully promoted to admin.');
-        fetchUsers(); // Refresh the users list
+        loadUsers(); // Refresh the users list
       } else {
         const errorMsg = await response.json();
         alert(`Failed to promote user: ${errorMsg.message}`);
@@ -176,7 +153,9 @@ async function promoteToAdmin(userId) {
     }
   }
 
-  async function demoteAdmin(userId) {
+
+
+async function demoteAdmin(userId) {
     if (!confirm('Are you sure you want to remove this user as an admin?')) return;
   
     try {

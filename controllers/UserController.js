@@ -118,7 +118,6 @@ async login(req, res) {
 
   async authUser(req, res) {
     try {
-        // Send userId and isAdmin from decoded token (req.user)
         res.json({ userId: req.user.userId, isAdmin: req.user.isAdmin });
     } catch (error) {
         res.status(500).json({ message: "Error retrieving user details" });
@@ -144,8 +143,8 @@ async login(req, res) {
   // Delete a user by ID
   async destroy(req, res) {
     try {
-        const userId = req.params.id; // Correctly get userId from request params
-        const deleted = await User.delete(userId); // Call your separate SQL function
+        const userId = req.params.id;
+        const deleted = await User.delete(userId); 
         if (!deleted) {
             return res.status(404).json({ message: "User not found or already deleted" });
         }
@@ -161,9 +160,9 @@ async login(req, res) {
   // Remove admin privileges for a user
   async removeAdmin(req, res) {
     try {
-      const { id } = req.params;
+      const userId = req.params.id;;
 
-      const updated = await User.setRole(id, 'user');
+      const updated = await User.setRole(userId, 'user');
       if (!updated) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -175,25 +174,34 @@ async login(req, res) {
     }
   },
 
-  async promoteUser(req, res){
+  async promoteUser(req, res) {
     try {
-      const userId = req.user.id;
-  
-      const user = await User.findByPk(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Update the user's IsAdmin status
-      user.IsAdmin = 1; // Assuming 1 means true for admin
-      await user.save();
-  
-      res.status(200).json({ message: `User ${user.Email} promoted to admin.` });
+        const userId = req.params.id;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required" });
+        }
+
+        // Check if the user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update the user's IsAdmin status in the database
+        const updated = await User.setRole(userId, 1); // Assuming 1 means admin
+
+        if (!updated) {
+            return res.status(500).json({ message: "Failed to promote user" });
+        }
+
+        res.status(200).json({ message: `User ${user.Email} promoted to admin.` });
+
     } catch (error) {
-      console.error('Error promoting user:', error);
-      res.status(500).json({ message: 'Error promoting user to admin' });
+        console.error("Error promoting user:", error.message);
+        res.status(500).json({ message: "Error promoting user to admin" });
     }
-  },
+},
   
   async demoteUser (req, res){
     try {

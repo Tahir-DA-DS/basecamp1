@@ -95,22 +95,10 @@ const User = {
         throw new Error("User not found");
     }
 
-    console.log("Entered Password:", password);
-    console.log("Stored Hashed Password:", user.Password);
-
     if (!user.Password) {
         console.error("User has no password stored!");
         throw new Error("No password found for user.");
     }
-
-    const modifiedHash = user.Password.replace("$2y$", "$2y$");
-    const isPasswordValid = await bcrypt.compare(password, modifiedHash);
-    console.log("Fixed Hash Match:", isPasswordValid);
-
-    // const isPasswordValid = await bcrypt.compare(password, user.Password);
-    console.log("Password Match:", isPasswordValid);
-
-
 
     if (!isPasswordValid) {
         console.error("Password does not match!");
@@ -122,7 +110,7 @@ const User = {
 
   // Assign a role to a user (requires an IsAdmin column in the schema)
   async setRole(userId, role) {
-    const isAdmin = role === 'admin' ? 1 : 0;
+    const isAdmin = role === 1 ? 1 : 0;
     const sql = `UPDATE Users SET IsAdmin = ? WHERE Id = ?`;
     const [result] = await db.execute(sql, [isAdmin, userId]);
     return result.affectedRows > 0; // Return true if the update succeeded
