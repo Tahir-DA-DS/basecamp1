@@ -17,6 +17,6 @@ router.delete('/users/:id', isAuthenticated, isAdmin, UserController.destroy); /
 
 // Admin role management
 router.put('/users/:id/setAdmin', isAuthenticated, isAdmin, UserController.promoteUser)
-router.post('/users/:id/removeAdmin', UserController.removeAdmin); // Remove admin privileges
+router.put('/users/:id/removeAdmin', isAuthenticated, isAdmin, UserController.removeAdmin); // Remove admin privileges
 
 module.exports = router;

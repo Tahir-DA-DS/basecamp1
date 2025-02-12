@@ -47,7 +47,7 @@ function loadUsers() {
                   <td>
                       ${!user.IsAdmin ? 
                           `<button class="btn btn-success btn-sm" onclick="promoteToAdmin(${user.Id})">Make Admin</button>` : 
-                          `<button class="btn btn-warning btn-sm" onclick="removeAdmin(${user.Id})">Remove Admin</button>`
+                          `<button class="btn btn-warning btn-sm" onclick="demoteAdmin(${user.Id})">Remove Admin</button>`
                       }
                       <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.Id})">Delete</button>
                   </td>
@@ -155,31 +155,35 @@ async function promoteToAdmin(userId) {
 
 
 
-async function demoteAdmin(userId) {
+  async function demoteAdmin(userId) {
     if (!confirm('Are you sure you want to remove this user as an admin?')) return;
-  
+
     try {
-      const response = await fetch(`/api/admin/users/${userId}/demote`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`, // Include token if needed
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      if (response.ok) {
-        alert('User successfully removed as an admin.');
-        fetchUsers(); // Refresh the users list
-      } else {
-        const errorMsg = await response.json();
-        alert(`Failed to remove admin: ${errorMsg.message}`);
-      }
+        const response = await fetch(`http://localhost:3000/users/${userId}/removeAdmin`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Include token if needed
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ role: 'user' }) // Send role as 'user' to demote
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(`Failed to remove admin: ${data.message}`);
+            return;
+        }
+
+        alert(`User ${userId} successfully demoted.`);
+        loadUsers(); // Refresh the users list
     } catch (error) {
-      console.error('Error removing admin:', error);
-      alert('An error occurred while removing the user as admin.');
+        console.error('Error removing admin:', error);
+        alert('An error occurred while demoting the user.');
     }
-  }
-  
+}
+
+
 
 
 

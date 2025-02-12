@@ -160,9 +160,9 @@ async login(req, res) {
   // Remove admin privileges for a user
   async removeAdmin(req, res) {
     try {
-      const userId = req.params.id;;
+      const userId = req.params.id;
 
-      const updated = await User.setRole(userId, 'user');
+      const updated = await User.setRole(userId, 0);
       if (!updated) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -202,34 +202,6 @@ async login(req, res) {
         res.status(500).json({ message: "Error promoting user to admin" });
     }
 },
-  
-  async demoteUser (req, res){
-    try {
-      const userId = req.user.id
-
-      // if (user.Id === req.user.id) {
-      //   return res.status(403).json({ message: 'You cannot remove yourself as an admin.' });
-      // }
-  
-      const user = await User.findByPk(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      if (user.IsAdmin === 0) {
-        return res.status(400).json({ message: 'User is already a regular user.' });
-      }
-  
-      // Update the user's IsAdmin status
-      user.IsAdmin = 0; // 0 means non-admin
-      await user.save();
-  
-      res.status(200).json({ message: `User ${user.Email} has been demoted.` });
-    } catch (error) {
-      console.error('Error demoting user:', error);
-      res.status(500).json({ message: 'Error demoting user from admin' });
-    }
-  }
   
 
 };
