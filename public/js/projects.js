@@ -1,61 +1,131 @@
 const API_BASE_URL = 'http://localhost:3000';
 
-// Get the stored token from localStorage
 function getToken() {
   return localStorage.getItem('token');
 }
 
+document.addEventListener("DOMContentLoaded", () => { //fetch projects, attachments and threads on initialization
+  fetchProjects();
+  fetchThreads();
+});
+
+document.getElementById("projectForm").addEventListener("submit", function (event) {
+  event.preventDefault(); // Prevent default form submission
+  
+  const name = document.getElementById("projectName").value;
+  const description = document.getElementById("projectDescription").value;
+  const fileInput = document.getElementById("fileUpload").files[0];
+  const token = getToken(); // Assume this function retrieves the auth token
+
+  if (!name || !description) {
+    return alert("Project name and description are required!");
+  }
+
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("description", description);
+  if (fileInput) {
+    formData.append("file", fileInput);
+  }
+
+  fetch(`${API_BASE_URL}/projects`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    body: formData,
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert("Project created successfully!");
+      document.getElementById("projectForm").reset(); // Reset form fields
+      fetchProjects(); // Refresh project list
+      new bootstrap.Modal(document.getElementById("addProjectModal")).hide(); // Close modal
+    })
+    .catch(error => console.error("Error creating project:", error));
+})
+
 // Fetch and display all projects
 async function fetchProjects() {
-  try {
-    const token = getToken();
+  // try {
+  //   const token = getToken();
 
-    const response = await fetch(`${API_BASE_URL}/projects`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+  //   const response = await fetch(`${API_BASE_URL}/projects`, {
+  //     method: 'GET',
+  //     headers: {
+  //       'Authorization': `Bearer ${token}`,
+  //       'Content-Type': 'application/json',
+  //     },
+  //   });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        alert('Unauthorized access. Please log in again.');
-      }
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
+  //   if (!response.ok) {
+  //     if (response.status === 401) {
+  //       alert('Unauthorized access. Please log in again.');
+  //     }
+  //     throw new Error(`Error: ${response.status} - ${response.statusText}`);
+  //   }
 
-    const projects = await response.json();
-    console.log('Fetched Projects:', projects);
+  //   const projects = await response.json();
+  
 
-    const tableBody = document.getElementById('project-table-body');
-    tableBody.innerHTML = '';
+  //   const tableBody = document.getElementById('project-table-body');
+  //   tableBody.innerHTML = '';
 
-    if (projects.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="5">No projects found.</td></tr>';
-      return;
-    }
+  //   if (projects.length === 0) {
+  //     tableBody.innerHTML = '<tr><td colspan="5">No projects found.</td></tr>';
+  //     return;
+  //   }
 
-    projects.forEach((project) => {
-      const row = `
-        <tr>
-          <td>${project.id}</td>
-          <td>${project.name}</td>
-          <td>${project.description}</td>
-          <td>${project.userId}</td>
-          <td>
-            <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
-          </td>
-        </tr>
-      `;
-      tableBody.innerHTML += row;
-    });
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    document.getElementById('project-table-body').innerHTML =
-      '<tr><td colspan="5">Failed to load projects. Please try again later.</td></tr>';
-  }
+  //   projects.forEach((project) => {
+  //     const row = `
+  //       <tr>
+  //         <td>${project.id}</td>
+  //         <td>${project.name}</td>
+  //         <td>${project.description}</td>
+  //         <td>${project.userId}</td>
+  //         <td>
+  //           <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
+  //           <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
+  //         </td>
+  //       </tr>
+  //     `;
+  //     tableBody.innerHTML += row;
+  //   });
+  // } catch (error) {
+  //   console.error('Error fetching projects:', error);
+  //   document.getElementById('project-table-body').innerHTML =
+  //     '<tr><td colspan="5">Failed to load projects. Please try again later.</td></tr>';
+  // }
+  fetch(`${API_BASE_URL}/projects`, {
+    headers: {
+      "Authorization": `Bearer ${getToken()}`,
+    },
+  })
+    .then(res => res.json())
+    .then(data => {
+      const tableBody = document.getElementById("project-table-body");
+      tableBody.innerHTML = ""; // Clear previous rows
+      data.forEach(project => {
+        const attachmentLink = project.filename
+          ? `<a href="${API_BASE_URL}/${project.filepath}" target="_blank">${project.filename}</a>`
+          : "No Attachment";
+
+        tableBody.innerHTML += `
+          <tr>
+            <td>${project.id}</td>
+            <td>${project.name}</td>
+            <td>${project.description}</td>
+            <td>${project.userId}</td>
+            <td>${attachmentLink}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="editProject(event, ${project.id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    })
+    .catch(error => console.error("Error fetching projects:", error));
 }
 
 // Delete a project
@@ -121,7 +191,6 @@ async function addProject(event) {
       }
       throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
-
     fetchProjects(); // Refresh the table
     const modal = bootstrap.Modal.getInstance(document.getElementById('addProjectModal'));
     if (modal) modal.hide();
@@ -131,37 +200,6 @@ async function addProject(event) {
     alert('Failed to add the project. Please try again.');
   }
 }
-
-//edit project
-// async function editProject(projectId) {
-
-//   try {
-//     const token = getToken();
-
-//     const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-//       method: 'PUT',
-//       headers: {
-//         'Authorization': `Bearer ${token}`, // Include token in Authorization header
-//       'Content-Type': 'application/json',
-//       },  
-//     });
-
-//     if (!response.ok) {
-//       if (response.status === 401) {
-//         alert('Unauthorized access. Please log in again.');
-//         // Redirect to login page or take appropriate action
-//       }
-//       throw new Error(`Error: ${response.status} - ${response.statusText}`);
-//     }
-
-//     fetchProjects(); // Refresh the table
-//     const modal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
-//     if (modal) modal.hide();
-//   } catch (error) {
-//     console.error('Error updating project:', error);
-//     alert('Failed to update the project. Please try again.');
-//   }
-// }
 
 async function editProject(event) {
   event.preventDefault(); // Prevent default form submission
@@ -287,8 +325,190 @@ async function loadProjectDetails() {
     console.error('Error loading project details:', error);
     alert('Failed to load project details.');
   }
+  // try {
+  //   const token = getToken();
+
+  //   const response = await fetch(`${API_BASE_URL}/projects`, {
+  //     method: 'GET',
+  //     headers: {
+  //       'Authorization': `Bearer ${token}`,
+  //       'Content-Type': 'application/json',
+  //     },
+  //   });
+
+  //   if (!response.ok) {
+  //     throw new Error(`Error: ${response.status} - ${response.statusText}`);
+  //   }
+
+  //   const data = await response.json();
+  //     console.log(data);
+      
+  //   if (!Array.isArray(data) || data.length === 0) {
+  //     console.error("No projects found");
+  //     return;
+  //   }
+
+  //   // Populate project selection dropdown
+  //   const select = document.getElementById("edit-project-select");
+  //   select.innerHTML = `<option value="">Select a project</option>`;
+    
+  //   data.forEach(project => {
+  //     select.innerHTML += `<option value="${project.id}">${project.name}</option>`;
+  //   });
+
+  //   // Show project selection modal
+  //   new bootstrap.Modal(document.getElementById("selectProjectModal")).show();
+  // } catch (error) {
+  //   console.error('Error loading projects:', error);
+  //   alert('Failed to load projects.');
+  // }
 }
-// Initialize
-document.getElementById('add-project-form').addEventListener('submit', addProject);
+
+
+
+async function populateEditForm() {
+  const projectId = document.getElementById("edit-project-select").value;
+  if (!projectId) return;
+
+  try {
+    const token = getToken();
+
+    const response = await fetch(`${API_BASE_URL}/api/project/${projectId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const project = await response.json();
+
+    document.getElementById('edit-project-id').value = project.id || '';
+    document.getElementById('edit-project-name').value = project.name || '';
+    document.getElementById('edit-project-description').value = project.description || '';
+
+    // Populate attachment field (if exists)
+    const attachmentField = document.getElementById("current-attachment");
+    if (project.attachment) {
+      attachmentField.innerHTML = `<a href="${API_BASE_URL}/${project.attachment.filepath}" target="_blank">${project.attachment.filename}</a>`;
+    } else {
+      attachmentField.innerHTML = "No file uploaded.";
+    }
+
+    // Close selection modal & open edit modal
+    bootstrap.Modal.getInstance(document.getElementById("selectProjectModal")).hide();
+    new bootstrap.Modal(document.getElementById("editProjectModal")).show();
+
+  } catch (error) {
+    console.error('Error loading project details:', error);
+    alert('Failed to load project details.');
+  }
+}
+
+async function fetchAttachments() {
+  const list = document.getElementById("attachmentList");
+  list.innerHTML = "<li class='list-group-item'>Loading...</li>"; // Show loading 
+  const token = getToken()
+
+  try {
+      const response = await fetch("http://localhost:3000/api/attachment", {
+          method: "GET",
+          headers: {
+              "Authorization": `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
+      });
+
+      if (!response.ok) {
+          throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      list.innerHTML = ""; // Clear the list
+
+      if (data.length === 0) {
+          list.innerHTML = "<li class='list-group-item'>No attachments found</li>";
+          return;
+      }
+
+      data.forEach(file => {
+          const listItem = document.createElement("li");
+          listItem.className = "list-group-item";
+          listItem.textContent = file.filename;
+          list.appendChild(listItem);
+      });
+  } catch (error) {
+      console.error("There has been a problem with your fetch operation:", error);
+      list.innerHTML = "<li class='list-group-item text-danger'>Error fetching attachments</li>";
+  }
+}
+
+async function fetchThreads() {
+  const list = document.getElementById("threadList");
+  list.innerHTML = "<li class='list-group-item'>Loading...</li>"; // Show loading state
+  const token = getToken()
+
+  try {
+      const response = await fetch(`${API_BASE_URL}/api/thread`, {
+          method: "GET",
+          headers: {
+              "Authorization": `Bearer ${token}`, 
+          },
+      });
+
+      if (!response.ok) {
+          throw new Error("Failed to fetch threads");
+      }
+
+      const data = await response.json();
+      list.innerHTML = ""; // Clear the list
+
+      if (data.length === 0) {
+          list.innerHTML = "<li class='list-group-item'>No threads found</li>";
+          return;
+      }
+
+      data.forEach(thread => {
+          const listItem = document.createElement("li");
+          listItem.className = "list-group-item";
+
+          const link = document.createElement("a");
+          link.href = `thread.html?threadId=${thread.id}`;
+          link.textContent = thread.title;
+
+          listItem.appendChild(link);
+          list.appendChild(listItem);
+      });
+  } catch (error) {
+      console.error("Error fetching threads:", error);
+      list.innerHTML = "<li class='list-group-item text-danger'>Error fetching threads</li>";
+  }
+}
+
+// document.getElementById('add-project-form').addEventListener('submit', addProject);
 document.getElementById('edit-project-form').addEventListener('submit', editProject);
-fetchProjects(); // Fetch projects directly on initialization
+
+
+function uploadAttachment() {
+  const fileInput = document.getElementById("fileUpload").files[0];
+  const token = getToken()
+  if (!fileInput) return alert("Select a file first!");
+
+  const formData = new FormData();
+  formData.append("file", fileInput);
+
+  fetch(`${API_BASE_URL}/api/attachment`, { 
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`, 
+  }, 
+    body: formData 
+  
+  })
+      .then(res => res.json())
+}
+

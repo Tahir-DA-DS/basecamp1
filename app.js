@@ -34,7 +34,7 @@ app.use(routes);
 
 
 app.use(express.static('public'));
-
+app.use("/uploads", express.static("uploads"));
 // app.get('/check-session', (req, res) => {
 //   console.log(req.session);
 //   res.json({ session: req.session });
