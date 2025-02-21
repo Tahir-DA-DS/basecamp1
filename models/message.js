@@ -19,7 +19,6 @@ class Message {
         ORDER BY messages.created_at ASC
       `;
 
-      console.log("Fetching messages for threadId:", threadId); // Debug log
 
       const [rows] = await db.execute(sql, [threadId]);
 
@@ -29,6 +28,35 @@ class Message {
       throw err;
     }
   }
+
+  static async update(messageId, userId, newContent) {
+    try {
+      const [result] = await db.execute(
+        "UPDATE messages SET content = ? WHERE id = ? AND user_id = ?",
+        [newContent, messageId, userId]
+      );
+
+      return result.affectedRows > 0; 
+    } catch (err) {
+      console.error("Error updating message:", err);
+      throw new Error("Could not update message");
+    }
+  }
+
+  static async delete(messageId, userId) {
+    try {
+      const [result] = await db.execute(
+        "DELETE FROM messages WHERE id = ? AND user_id = ?",
+        [messageId, userId]
+      );
+
+      return result.affectedRows > 0; // Returns true if the deletion was successful
+    } catch (err) {
+      console.error("Error deleting message:", err);
+      throw new Error("Could not delete message");
+    }
+  }
+
 }
 
 module.exports = Message;

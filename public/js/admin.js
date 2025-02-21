@@ -1,4 +1,8 @@
 // Fetch all users (Admins only)
+let API_BASE_URL = 'http://localhost:3000'
+function getToken() {
+    return localStorage.getItem('token');
+  }
 
 document.addEventListener("DOMContentLoaded", function () {
   const authToken = localStorage.getItem("token"); // Assuming user token is stored
@@ -77,7 +81,7 @@ async function loadProjects() {
                     <td>${project.name}</td>
                     <td>${project.description}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm" onclick="editProject(${project.id})">Edit</button>
+                      <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
                     </td>
                 </tr>
@@ -183,9 +187,124 @@ async function promoteToAdmin(userId) {
     }
 }
 
+async function loadProjectDetails() {
+    try {
+      const token = getToken();
+  
+      const response = await fetch(`${API_BASE_URL}/projects`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        console.error("No projects found");
+        return;
+      }
+      
+      // Assuming you want to edit the first project in the list
+      const project = data[0]; 
+      
+      document.getElementById('edit-project-id').value = project.id || '';
+      document.getElementById('edit-project-name').value = project.name || '';
+      document.getElementById('edit-project-description').value = project.description || '';
+  
+      // Open the modal
+      const modal = new bootstrap.Modal(document.getElementById('editProjectModal'));
+      modal.show();
+  
+    } catch (error) {
+      console.error('Error loading project details:', error);
+      alert('Failed to load project details.');
+    }
+  }
 
 
+  async function saveProjectChanges() {
+    const projectId = document.getElementById('edit-project-id').value;
+    const name = document.getElementById('edit-project-name').value.trim();
+    const description = document.getElementById('edit-project-description').value.trim();
+  
+    if (!name || !description) {
+      alert('Both project name and description are required.');
+      return;
+    }
+  
+    try {
+      const token = getToken();
+  
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+        method: 'PUT',  // Use PUT for updating data
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, description }), // Send updated data
+      });
+  
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert('Unauthorized access. Please log in again.');
+        }
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+      }
+  
+      // Refresh the project list
+      fetchProjects();
+  
+      // Close the modal after update
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editProjectModal'));
+      if (modal) modal.hide();
+  
+      // Reset form
+      document.getElementById('edit-project-form').reset();
+  
+    } catch (error) {
+      console.error('Error updating project:', error);
+      alert('Failed to update the project. Please try again.');
+    }
+}
 
+async function fetchProjects() {
+    fetch(`${API_BASE_URL}/projects`, {
+      headers: {
+        "Authorization": `Bearer ${getToken()}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        const tableBody = document.getElementById("project-table-body");
+        tableBody.innerHTML = ""; // Clear previous rows
+        data.forEach(project => {
+          const attachmentLink = project.filename
+            ? `<a href="${API_BASE_URL}/${project.filepath}" target="_blank">${project.filename}</a>`
+            : "No Attachment";
+  
+          tableBody.innerHTML += `
+            <tr>
+              <td>${project.id}</td>
+              <td>${project.name}</td>
+              <td>${project.description}</td>
+              <td>${project.userId}</td>
+              <td>${attachmentLink}</td>
+              <td>
+                <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      })
+      .catch(error => console.error("Error fetching projects:", error));
+  }
 
 // fetchUsers();
 // fetchProjects();

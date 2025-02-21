@@ -47,55 +47,6 @@ document.getElementById("projectForm").addEventListener("submit", function (even
 
 // Fetch and display all projects
 async function fetchProjects() {
-  // try {
-  //   const token = getToken();
-
-  //   const response = await fetch(`${API_BASE_URL}/projects`, {
-  //     method: 'GET',
-  //     headers: {
-  //       'Authorization': `Bearer ${token}`,
-  //       'Content-Type': 'application/json',
-  //     },
-  //   });
-
-  //   if (!response.ok) {
-  //     if (response.status === 401) {
-  //       alert('Unauthorized access. Please log in again.');
-  //     }
-  //     throw new Error(`Error: ${response.status} - ${response.statusText}`);
-  //   }
-
-  //   const projects = await response.json();
-  
-
-  //   const tableBody = document.getElementById('project-table-body');
-  //   tableBody.innerHTML = '';
-
-  //   if (projects.length === 0) {
-  //     tableBody.innerHTML = '<tr><td colspan="5">No projects found.</td></tr>';
-  //     return;
-  //   }
-
-  //   projects.forEach((project) => {
-  //     const row = `
-  //       <tr>
-  //         <td>${project.id}</td>
-  //         <td>${project.name}</td>
-  //         <td>${project.description}</td>
-  //         <td>${project.userId}</td>
-  //         <td>
-  //           <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
-  //           <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
-  //         </td>
-  //       </tr>
-  //     `;
-  //     tableBody.innerHTML += row;
-  //   });
-  // } catch (error) {
-  //   console.error('Error fetching projects:', error);
-  //   document.getElementById('project-table-body').innerHTML =
-  //     '<tr><td colspan="5">Failed to load projects. Please try again later.</td></tr>';
-  // }
   fetch(`${API_BASE_URL}/projects`, {
     headers: {
       "Authorization": `Bearer ${getToken()}`,
@@ -118,7 +69,7 @@ async function fetchProjects() {
             <td>${project.userId}</td>
             <td>${attachmentLink}</td>
             <td>
-              <button class="btn btn-primary btn-sm" onclick="editProject(event, ${project.id})">Edit</button>
+              <button class="btn btn-warning btn-sm" onclick="loadProjectDetails(${project.id})">Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">Delete</button>
             </td>
           </tr>
@@ -447,47 +398,47 @@ async function fetchAttachments() {
   }
 }
 
-async function fetchThreads() {
-  const list = document.getElementById("threadList");
-  list.innerHTML = "<li class='list-group-item'>Loading...</li>"; // Show loading state
-  const token = getToken()
+// async function fetchThreads() {
+//   const list = document.getElementById("threadList");
+//   list.innerHTML = "<li class='list-group-item'>Loading...</li>"; // Show loading state
+//   const token = getToken()
 
-  try {
-      const response = await fetch(`${API_BASE_URL}/api/thread`, {
-          method: "GET",
-          headers: {
-              "Authorization": `Bearer ${token}`, 
-          },
-      });
+//   try {
+//       const response = await fetch(`${API_BASE_URL}/api/thread`, {
+//           method: "GET",
+//           headers: {
+//               "Authorization": `Bearer ${token}`, 
+//           },
+//       });
 
-      if (!response.ok) {
-          throw new Error("Failed to fetch threads");
-      }
+//       if (!response.ok) {
+//           throw new Error("Failed to fetch threads");
+//       }
 
-      const data = await response.json();
-      list.innerHTML = ""; // Clear the list
+//       const data = await response.json();
+//       list.innerHTML = ""; // Clear the list
 
-      if (data.length === 0) {
-          list.innerHTML = "<li class='list-group-item'>No threads found</li>";
-          return;
-      }
+//       if (data.length === 0) {
+//           list.innerHTML = "<li class='list-group-item'>No threads found</li>";
+//           return;
+//       }
 
-      data.forEach(thread => {
-          const listItem = document.createElement("li");
-          listItem.className = "list-group-item";
+//       data.forEach(thread => {
+//           const listItem = document.createElement("li");
+//           listItem.className = "list-group-item";
 
-          const link = document.createElement("a");
-          link.href = `thread.html?threadId=${thread.id}`;
-          link.textContent = thread.title;
+//           const link = document.createElement("a");
+//           link.href = `thread.html?threadId=${thread.id}`;
+//           link.textContent = thread.title;
 
-          listItem.appendChild(link);
-          list.appendChild(listItem);
-      });
-  } catch (error) {
-      console.error("Error fetching threads:", error);
-      list.innerHTML = "<li class='list-group-item text-danger'>Error fetching threads</li>";
-  }
-}
+//           listItem.appendChild(link);
+//           list.appendChild(listItem);
+//       });
+//   } catch (error) {
+//       console.error("Error fetching threads:", error);
+//       list.innerHTML = "<li class='list-group-item text-danger'>Error fetching threads</li>";
+//   }
+// }
 
 // document.getElementById('add-project-form').addEventListener('submit', addProject);
 document.getElementById('edit-project-form').addEventListener('submit', editProject);
@@ -512,3 +463,108 @@ function uploadAttachment() {
       .then(res => res.json())
 }
 
+
+async function fetchThreads() {
+  let token = await getToken();
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/thread`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch threads");
+
+    const threads = await response.json();
+    const threadList = document.getElementById("threadList");
+    threadList.innerHTML = ""; // Clear list
+
+    threads.forEach(thread => {
+      const li = document.createElement("li");
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+
+      // Clickable thread title
+      li.innerHTML = `
+        <a href="thread.html?threadId=${thread.id}" class="text-decoration-none">
+          ${thread.title} (Project ID: ${thread.project_id})
+        </a>
+        <button class="btn btn-danger btn-sm" onclick="deleteThread(${thread.id})">Delete</button>
+      `;
+
+      threadList.appendChild(li);
+    });
+  } catch (error) {
+    console.error("Error loading threads:", error);
+  }
+}
+
+document.getElementById("createThreadBtn").addEventListener("click", createThread);
+async function createThread() {
+  let token = await getToken();
+  const projectId = prompt("Enter Project ID:");
+  const title = prompt("Enter Thread Title:");
+  if (!projectId || !title) return;
+
+  try {
+    const response = await fetch("http://localhost:3000/api/thread", { // Added `await`
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json" // Added `Content-Type`
+      },
+      body: JSON.stringify({ projectId, title }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(errorData.message);
+      return;
+    }
+
+    alert("Thread created successfully");
+    fetchThreads(); // Refresh list
+  } catch (error) {
+    console.error("Error creating thread:", error);
+  }
+}
+
+async function deleteThread(id) {
+  let token = await getToken();
+
+  if (!confirm("Are you sure you want to delete this thread?")) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/thread/${id}`, { 
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json" // Added `Content-Type`
+      },
+
+     });
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(errorData.message);
+      return;
+    }
+
+    alert("Thread deleted");
+    fetchThreads(); // Refresh list
+  } catch (error) {
+    console.error("Error deleting thread:", error);
+  }
+}
+
+// function createThread() {
+//   const token = getToken()
+//   const threadTitle = prompt("Enter thread title:");
+//   if (!threadTitle) return;
+
+//   fetch("http://localhost:3000/api/thread", {
+//       method: "POST",
+//       headers: {"Authorization":`Bearer ${token}`
+//       },
+//       body: JSON.stringify({ title: threadTitle })
+//   }).then(() => fetchThreads());
+// }
